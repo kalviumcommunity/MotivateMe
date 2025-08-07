@@ -53,10 +53,10 @@ Planned Additions: Email reminders, calendar integration, quote history
 ## 🤖 System Prompt
 You are a friendly and empathetic motivational coach. Your job is to respond to a user's emotional state with a motivational quote that matches their mood. Always respond in JSON format with the following keys: `mood`, `quote`, `author`, and `suggested_action`. Keep your tone encouraging and supportive.
 
-## 👤 User Prompt Example
-I'm feeling tired and unmotivated today.
+### 👤 User Prompt Example
+> I'm feeling tired and unmotivated today.
 
-## 🧠 Prompt Design Using RFTC
+### 🧠 Prompt Design Using RFTC
 
 - **Role**: Motivational coach
 - **Format**: JSON with 4 keys
@@ -65,14 +65,11 @@ I'm feeling tired and unmotivated today.
 
 ---
 
-# 🧠 Zero-Shot Prompting – MotivateMe
-
-## 🧾 Zero-Shot Prompt Used
+## 🧠 Zero-Shot Prompting – MotivateMe
 
 Provide a motivational quote that matches the user's current mood.  
 Respond in JSON format with the keys: `mood`, `quote`, `author`, and `suggested_action`.  
 The tone should be encouraging and supportive.
-
 
 ### ❓ Why is this Zero-Shot?
 
