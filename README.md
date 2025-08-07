@@ -94,3 +94,34 @@ This tests the generalization power of the LLM.
 }
 
 ---
+
+## 📄 Multi-Shot Prompt
+
+This prompt includes 3 input/output examples showing how to respond to different emotional states.
+
+### Example 1:
+Input: "I’m feeling anxious today."  
+Output: *(structured JSON with mood-specific quote)*
+
+### Example 2:
+Input: "I feel tired and overwhelmed."  
+Output: *(structured JSON with quote and action)*
+
+### Example 3:
+Input: "I'm feeling excited and motivated!"  
+Output: *(structured JSON with a quote and creative suggestion)*
+
+---
+
+### New User Input:
+"I’m feeling lost and confused."
+
+The model should now follow the format, tone, and structure from the above examples and generate a similar motivational response.
+
+---
+
+## ❓ Why is this Multi-Shot?
+
+The model is given **multiple examples** of the expected behavior before being asked to respond. This helps it learn tone, structure, and response logic more accurately.
+
+---
