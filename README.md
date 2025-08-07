@@ -125,3 +125,34 @@ The model should now follow the format, tone, and structure from the above examp
 The model is given **multiple examples** of the expected behavior before being asked to respond. This helps it learn tone, structure, and response logic more accurately.
 
 ---
+
+## 📄 Dynamic Prompt Example
+
+Suppose the user types:
+> "I'm feeling extremely anxious and panicked."
+
+The prompt generated **at runtime** would be:
+
+> You are a motivational coach helping someone who is **extremely anxious and panicked**.  
+> Provide an emotionally appropriate motivational quote.  
+> Respond in JSON with the keys: `mood`, `quote`, `author`, and `suggested_action`.  
+> Keep the tone calming and reassuring.
+
+---
+
+If the user input was:
+> "I'm just a bit tired today."
+
+The dynamically generated prompt would be:
+
+> You are a motivational coach helping someone who is **just a bit tired**.  
+> Provide a gentle motivational quote.  
+> Respond in JSON... [etc.]
+
+---
+
+## ❓ Why is this Dynamic Prompting?
+
+The prompt is **not static** — it is **constructed on the fly** based on the user's input and emotion intensity. This allows for highly personalized, context-aware responses.
+
+---
