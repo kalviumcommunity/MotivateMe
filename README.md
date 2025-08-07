@@ -156,3 +156,31 @@ The dynamically generated prompt would be:
 The prompt is **not static** — it is **constructed on the fly** based on the user's input and emotion intensity. This allows for highly personalized, context-aware responses.
 
 ---
+
+# 🧠 Chain of Thought Prompting – Daily Motivation Bot
+
+## 📄 Prompt Design
+
+The user will give you a sentence describing their mood.  
+First, identify the emotion(s) in the sentence.  
+Then, reason about what type of motivational quote might help them.  
+Finally, generate a motivational quote with a suitable tone.  
+Respond in JSON format with keys: `mood`, `quote`, `author`, and `suggested_action`.  
+Think step by step before giving the final output.
+
+---
+
+## 👤 User Input
+
+"I’m feeling completely lost and unsure of what to do next."
+
+---
+
+## 🧠 Why is this Chain of Thought Prompting?
+
+This prompt **forces the model to think step-by-step**.  
+First, it breaks down the emotion, reasons about what quote is needed, and only then generates the final structured output.
+
+This helps improve both **emotional accuracy** and **quote relevance**.
+
+---
