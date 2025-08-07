@@ -62,3 +62,22 @@ I'm feeling tired and unmotivated today.
 - **Format**: JSON with 4 keys
 - **Tone**: Encouraging and empathetic
 - **Context**: User’s self-reported mood
+
+---
+
+# 🧠 Zero-Shot Prompting – MotivateMe
+
+## 🧾 Zero-Shot Prompt Used
+
+Provide a motivational quote that matches the user's current mood.  
+Respond in JSON format with the keys: `mood`, `quote`, `author`, and `suggested_action`.  
+The tone should be encouraging and supportive.
+
+
+### ❓ Why is this Zero-Shot?
+
+No examples are given to the model.  
+It is expected to understand and complete the task based solely on the instruction.  
+This tests the generalization power of the LLM.
+
+---
