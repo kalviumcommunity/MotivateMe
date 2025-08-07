@@ -78,3 +78,18 @@ It is expected to understand and complete the task based solely on the instructi
 This tests the generalization power of the LLM.
 
 ---
+
+## 📄 One-Shot Prompt Used
+
+**Example Input:**  
+"I’m feeling anxious today."
+
+**Example Output:**
+```json
+{
+  "mood": "anxious",
+  "quote": "You don’t have to control your thoughts. You just have to stop letting them control you.",
+  "author": "Dan Millman",
+  "suggested_action": "Try a 2-minute breathing exercise."
+}
+
