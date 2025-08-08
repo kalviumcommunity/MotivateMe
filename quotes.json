@@ -1,0 +1,32 @@
+[
+  {
+    "mood": "anxious",
+    "quote": "You don’t have to control your thoughts. You just have to stop letting them control you.",
+    "author": "Dan Millman",
+    "suggested_action": "Try a 2-minute breathing exercise."
+  },
+  {
+    "mood": "tired",
+    "quote": "Rest if you must, but don’t you quit.",
+    "author": "Unknown",
+    "suggested_action": "Take a short walk and hydrate."
+  },
+  {
+    "mood": "lost",
+    "quote": "Not all those who wander are lost.",
+    "author": "J.R.R. Tolkien",
+    "suggested_action": "Reflect on one small next step you can take."
+  },
+  {
+    "mood": "excited",
+    "quote": "Enthusiasm moves the world.",
+    "author": "Arthur Balfour",
+    "suggested_action": "Channel your energy into a small creative task today."
+  },
+  {
+    "mood": "overwhelmed",
+    "quote": "You are allowed to pause. You are allowed to rest.",
+    "author": "Unknown",
+    "suggested_action": "Schedule a 10-minute break and breathe deeply."
+  }
+]
