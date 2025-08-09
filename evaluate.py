@@ -4,8 +4,9 @@ from difflib import SequenceMatcher
 import time
 import argparse
 import random
+import math
 
-# === Token logging helper (simple heuristic) ===
+# token logging helper (simple heuristic)
 def estimate_tokens(text):
     if not text:
         return 0
@@ -29,43 +30,47 @@ def similar(a, b):
     b = (b or "").lower().strip()
     return SequenceMatcher(None, a, b).ratio()
 
-def mock_model(user_input, quotes_db, temperature=0.0, top_k: int | None = None):
+def mock_model(user_input, quotes_db, temperature=0.0, top_k: int | None = None, top_p: float | None = None):
     """
-    Mock behavior demonstrating temperature + top_k:
-    - top_k limits how many candidate quotes are considered.
-    - temperature controls randomness among those candidates.
+    Mock behaviour demonstrating temperature, top_k and top_p:
+    - top_k limits candidate pool (number)
+    - top_p simulates nucleus sampling by taking a prefix of the pool of size proportional to top_p
+    - temperature controls randomness within that pool
     """
     user_input_lower = (user_input or "").lower()
-    # find matches where the mood substring appears
+    # matches where mood substring appears
     matches = [q for q in quotes_db if q.get("mood", "").lower() in user_input_lower]
 
-    # If top_k provided, limit matching pool size:
+    # if matches empty, fallback to full DB as potential candidates
+    candidate_pool = matches if matches else quotes_db.copy()
+
+    # apply top_k: shrink candidate_pool to at most top_k random items (if provided)
     if top_k is not None and top_k > 0:
-        if matches:
-            # If matches >= top_k, random sample top_k of them; else use all matches
-            pool = matches[:top_k] if len(matches) <= top_k else random.sample(matches, k=top_k)
-        else:
-            # No direct matches: consider top_k random quotes as broader candidates
-            pool = random.sample(quotes_db, k=min(top_k, len(quotes_db)))
-    else:
-        # no top_k applied: use matches or entire DB fallback
-        pool = matches if matches else quotes_db
+        if len(candidate_pool) > top_k:
+            candidate_pool = random.sample(candidate_pool, k=top_k)
 
-    # selection strategy:
-    if temperature <= 0.0:
-        # deterministic: pick first item in pool
-        chosen = pool[0] if pool else {
-            "mood": user_input, "quote": "Keep going, you're doing better than you think.",
-            "author": "AI Coach", "suggested_action": "Pause and breathe."
+    # apply top_p: simulate nucleus by taking a prefix sized by top_p * len(candidate_pool)
+    if top_p is not None and 0.0 < top_p < 1.0 and candidate_pool:
+        # determine number to keep; ensure at least 1
+        keep = max(1, int(math.ceil(len(candidate_pool) * float(top_p))))
+        # For deterministic feel, sort candidate_pool by mood (stable), and take first 'keep' items
+        candidate_pool = candidate_pool[:keep]
+
+    # selection strategy combining temperature:
+    if not candidate_pool:
+        return {
+            "mood": user_input,
+            "quote": "Keep going, you're doing better than you think.",
+            "author": "AI Coach",
+            "suggested_action": "Pause and breathe."
         }
-        return chosen
 
-    # temperature > 0: pick random from pool, bias by temperature (we keep simple)
-    # higher temperature => more random selection over pool
-    if pool:
-        # with higher temperature, weigh randomness heavier; we just random.choice for demo
-        return random.choice(pool)
-    return {"mood": user_input, "quote": "Keep going, you're doing better than you think.", "author": "AI Coach", "suggested_action": "Pause and breathe."}
+    if temperature <= 0.0:
+        # deterministic: pick first in pool
+        return candidate_pool[0]
+
+    # temperature > 0: random pick from candidate_pool
+    return random.choice(candidate_pool)
 
 def auto_judge(expected, actual):
     scores = {
@@ -83,24 +88,24 @@ def auto_judge(expected, actual):
     scores["overall_score"] = overall
     return scores
 
-def run_evaluation(temperature=0.0, top_k=None):
+def run_evaluation(temperature=0.0, top_k=None, top_p=None):
     dataset = load_json(DATASET_FILE)
     quotes_db = load_json(QUOTES_FILE)
     total_time = 0
     results = []
 
-    print(f"\n[INFO] Running evaluation with temperature={temperature} top_k={top_k}\n")
+    print(f"\n[INFO] Running evaluation with temperature={temperature}, top_k={top_k}, top_p={top_p}\n")
 
     for sample in dataset:
         start = time.perf_counter()
-        actual = mock_model(sample["input"], quotes_db, temperature=temperature, top_k=top_k)
+        actual = mock_model(sample["input"], quotes_db, temperature=temperature, top_k=top_k, top_p=top_p)
         elapsed = time.perf_counter() - start
         total_time += elapsed
 
         # token logging
         log_tokens(sample["input"], json.dumps(actual))
 
-        print(f"[Model call] temperature={temperature:.2f} top_k={top_k} input={sample['input']}")
+        print(f"[Model call] temp={temperature:.2f} top_k={top_k} top_p={top_p} input={sample['input']}")
         scores = auto_judge(sample["expected"], actual)
         results.append({
             "id": sample.get("id"),
@@ -110,9 +115,9 @@ def run_evaluation(temperature=0.0, top_k=None):
             "scores": scores,
             "latency_s": elapsed,
             "temperature": temperature,
-            "top_k": top_k
+            "top_k": top_k,
+            "top_p": top_p
         })
-
         print(f" -> sample {sample.get('id')} overall_score={scores['overall_score']:.3f} time={elapsed:.3f}s\n")
 
     avg_score = sum(r["scores"]["overall_score"] for r in results) / len(results)
@@ -127,5 +132,6 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--temperature", type=float, default=0.0)
     ap.add_argument("--top_k", type=int, default=None, help="Limit candidate pool size (Top-K)")
+    ap.add_argument("--top_p", type=float, default=None, help="Nucleus sampling parameter (0.0 < top_p <= 1.0)")
     args = ap.parse_args()
-    run_evaluation(temperature=args.temperature, top_k=args.top_k)
+    run_evaluation(temperature=args.temperature, top_k=args.top_k, top_p=args.top_p)
