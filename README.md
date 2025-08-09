@@ -1,6 +1,6 @@
-# 🧠 Daily Motivation Bot - GenAI Project
+# 🧠 MotivateMe - GenAI Project
 
-Welcome to the **Daily Motivation Bot**, a CLI-based GenAI agent that helps users stay motivated by generating personalized quotes based on their current mood.
+Welcome to the **MotivateMe**, a CLI-based GenAI agent that helps users stay motivated by generating personalized quotes based on their current mood.
 
 This project was created as part of the **Kalvium course on Developing AI Agents using GenAI**.
 
