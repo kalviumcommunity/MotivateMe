@@ -9,7 +9,7 @@ def call_google_studio(prompt_text: str, api_key: str = None, temperature: float
     Calls Google/Generative API (Gemini) with generationConfig including temperature/top_k/top_p.
     Returns (api_response_dict, response_text_str).
     """
-    api_key = api_key or os.environ.get("AIzaSyDLjM6tYL5F84PTHcxqgOf37da1T6MQZF0")
+    api_key = api_key or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         raise RuntimeError("Set GOOGLE_API_KEY environment variable or pass api_key.")
 
