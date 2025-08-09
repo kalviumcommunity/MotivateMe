@@ -1,26 +1,48 @@
-# main.py (excerpt)
-from token_utils import log_tokens_after_call
+# main.py
 import requests
 import json
+from token_utils import log_tokens_after_call  # assumes you have this from your token logging task
 
-def call_google_studio(prompt_text: str, api_key: str):
+def call_google_studio(prompt_text: str, api_key: str, temperature: float = 0.0):
     """
-    Example placeholder. Replace with actual Google Studio call.
-    Return a tuple: (api_response_dict_or_none, response_text_str)
+    Calls Google Studio API with a prompt and temperature.
+    Returns: (api_response_dict_or_none, response_text_str)
     """
-    # Example placeholder: DO NOT USE AS-IS; adapt to Google Studio's actual API.
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyDLjM6tYL5F84PTHcxqgOf37da1T6MQZF0"  # replace
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    payload = {"input": prompt_text}
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={AIzaSyDLjM6tYL5F84PTHcxqgOf37da1T6MQZF0}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": prompt_text}]}],
+        "generationConfig": {
+            "temperature": temperature
+        }
+    }
+
     r = requests.post(url, headers=headers, json=payload, timeout=20)
     api_response = r.json()
-    # figure out where the model text is:
-    # e.g., api_response["output_text"] or api_response["candidates"][0]["content"]
-    response_text = api_response.get("output_text") or json.dumps(api_response)
+
+    # Try extracting the main model output text
+    try:
+        response_text = api_response["candidates"][0]["content"]["parts"][0]["text"]
+    except (KeyError, IndexError, TypeError):
+        response_text = json.dumps(api_response)
+
     return api_response, response_text
 
-# Example usage:
-prompt = "Provide a motivational quote for mood: 'tired'. Respond in JSON..."
-api_resp, model_text = call_google_studio(prompt, api_key="AIzaSyDLjM6tYL5F84PTHcxqgOf37da1T6MQZF0")
-# Log tokens (this prints usage or local estimate)
-log_tokens_after_call(api_response=api_resp, prompt_text=prompt, response_text=model_text, model_name="gpt-4o-mini")
+
+if __name__ == "__main__":
+    API_KEY = "AIzaSyDLjM6tYL5F84PTHcxqgOf37da1T6MQZF0"  # replace with env var or secure store
+    prompt = "Provide a motivational quote for mood: 'tired'. Respond in JSON with fields mood, quote, author, suggested_action."
+
+    # Example call with temperature control
+    api_resp, model_text = call_google_studio(prompt, api_key=API_KEY, temperature=0.7)
+
+    # Log token usage
+    log_tokens_after_call(
+        api_response=api_resp,
+        prompt_text=prompt,
+        response_text=model_text,
+        model_name="gemini-1.5-flash"
+    )
+
+    # Print the model's output
+    print("Model Output:", model_text)
