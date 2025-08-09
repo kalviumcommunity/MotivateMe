@@ -2,6 +2,21 @@ import json
 from difflib import SequenceMatcher
 import time
 
+# === Token logging helper ===
+def estimate_tokens(text):
+    """Rough token estimate: ~4 chars/token."""
+    if not text:
+        return 0
+    return max(1, int(len(text) / 4))
+
+def log_tokens(prompt_text, response_text):
+    """Logs estimated token counts after each model call."""
+    prompt_tokens = estimate_tokens(prompt_text)
+    response_tokens = estimate_tokens(response_text)
+    total_tokens = prompt_tokens + response_tokens
+    print(f"[Token usage] prompt={prompt_tokens} completion={response_tokens} total={total_tokens}")
+
+# === Existing code ===
 DATASET_FILE = "evaluation_dataset.json"
 QUOTES_FILE = "quotes.json"
 
@@ -53,6 +68,9 @@ def run_evaluation():
         actual = mock_model(sample["input"], quotes_db)
         elapsed = time.perf_counter() - start
         total_time += elapsed
+
+        # Log tokens for this call
+        log_tokens(sample["input"], json.dumps(actual))
 
         scores = auto_judge(sample["expected"], actual)
         results.append({
