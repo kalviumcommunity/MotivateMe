@@ -92,8 +92,10 @@ This tests the generalization power of the LLM.
   "author": "Dan Millman",
   "suggested_action": "Try a 2-minute breathing exercise."
 }
+```
 
 ---
+
 
 ## 📄 Multi-Shot Prompt
 
