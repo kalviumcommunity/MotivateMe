@@ -1,48 +1,49 @@
 # main.py
+import os
 import requests
 import json
-from token_utils import log_tokens_after_call  # assumes you have this from your token logging task
+from token_utils import log_tokens_after_call  # assumes you created token_utils.py
 
-def call_google_studio(prompt_text: str, api_key: str, temperature: float = 0.0):
+def call_google_studio(prompt_text: str, api_key: str = None, temperature: float = 0.0, top_k: int | None = None, top_p: float | None = None):
     """
-    Calls Google Studio API with a prompt and temperature.
-    Returns: (api_response_dict_or_none, response_text_str)
+    Calls Google/Generative API (Gemini) with generationConfig including temperature/top_k/top_p.
+    Returns (api_response_dict, response_text_str).
     """
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={AIzaSyDLjM6tYL5F84PTHcxqgOf37da1T6MQZF0}"
-    headers = {"Content-Type": "application/json"}
+    api_key = api_key or os.environ.get("AIzaSyDLjM6tYL5F84PTHcxqgOf37da1T6MQZF0")
+    if not api_key:
+        raise RuntimeError("Set GOOGLE_API_KEY environment variable or pass api_key.")
+
+    # endpoint (Vertex/Gemini) - keep key out of source; we use Authorization if possible
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
+
+    generation_config = {"temperature": float(temperature)}
+    if top_k is not None:
+        generation_config["top_k"] = int(top_k)
+    if top_p is not None:
+        generation_config["top_p"] = float(top_p)
+
     payload = {
         "contents": [{"parts": [{"text": prompt_text}]}],
-        "generationConfig": {
-            "temperature": temperature
-        }
+        "generationConfig": generation_config
     }
 
-    r = requests.post(url, headers=headers, json=payload, timeout=20)
-    api_response = r.json()
+    resp = requests.post(url, headers=headers, json=payload, timeout=30)
+    api_response = resp.json()
 
-    # Try extracting the main model output text
+    # Try to extract text (Gemini-like response structure)
     try:
         response_text = api_response["candidates"][0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError, TypeError):
+    except Exception:
         response_text = json.dumps(api_response)
+
+    # Log tokens (will print API usage if present, else estimate)
+    log_tokens_after_call(api_response=api_response, prompt_text=prompt_text, response_text=response_text, model_name="gemini-1.5-flash")
 
     return api_response, response_text
 
-
 if __name__ == "__main__":
-    API_KEY = "AIzaSyDLjM6tYL5F84PTHcxqgOf37da1T6MQZF0"  # replace with env var or secure store
     prompt = "Provide a motivational quote for mood: 'tired'. Respond in JSON with fields mood, quote, author, suggested_action."
-
-    # Example call with temperature control
-    api_resp, model_text = call_google_studio(prompt, api_key=API_KEY, temperature=0.7)
-
-    # Log token usage
-    log_tokens_after_call(
-        api_response=api_resp,
-        prompt_text=prompt,
-        response_text=model_text,
-        model_name="gemini-1.5-flash"
-    )
-
-    # Print the model's output
+    # Example: pass top_k=5 to consider the top 5 token candidates
+    api_resp, model_text = call_google_studio(prompt_text=prompt, temperature=0.2, top_k=16)
     print("Model Output:", model_text)
