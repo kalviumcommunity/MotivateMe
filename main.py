@@ -6,6 +6,17 @@ import argparse
 import sys
 from typing import Optional, Tuple
 
+# ----------------------
+# Local function(s) AI can call
+# ----------------------
+def get_motivation_by_mood(mood: str) -> dict:
+    return {
+        "mood": mood,
+        "quote": "Keep pushing, greatness takes time.",
+        "author": "Anonymous",
+        "suggested_action": "Write down one thing you're grateful for today."
+    }
+
 # Try to import token logger (optional)
 try:
     from token_utils import log_tokens_after_call
@@ -104,26 +115,29 @@ def call_google_studio_structured(prompt_text: str,
     return api_response, response_text
 
 # ----------------------
-# High-level function
+# High-level function with function calling
 # ----------------------
-def get_structured_quote(user_mood: str,
-                         api_key: str,
-                         temperature: float = 0.2,
-                         top_k: Optional[int] = None,
-                         top_p: Optional[float] = None) -> Optional[dict]:
+def get_structured_or_function_call(user_mood: str,
+                                    api_key: str,
+                                    temperature: float = 0.2,
+                                    top_k: Optional[int] = None,
+                                    top_p: Optional[float] = None) -> Optional[dict]:
 
     stop_marker = "<END_JSON>"
-    system_instr = (
-        "You are a motivational quote generator. "
-        "Respond ONLY with a valid JSON object containing exactly these keys: "
-        "mood, quote, author, suggested_action. "
-        "No markdown, no code fences, no explanation. "
-        f"End your output with {stop_marker}."
-    )
+    system_instr = f"""
+You are a motivational assistant. You can either:
+1. Return a JSON object with keys: mood, quote, author, suggested_action.
+2. OR call a function by returning JSON: {{"name": "get_motivation_by_mood", "arguments": {{"mood": "<mood>"}}}}
+
+Available function:
+- get_motivation_by_mood(mood: string) → returns motivational quote data.
+
+Respond ONLY with valid JSON, no extra text or formatting. End with {stop_marker}.
+"""
 
     user_line = f'User mood: "{user_mood}".'
 
-    prompt = f"{system_instr}\n{user_line}\nOutput the JSON now:\n"
+    prompt = f"{system_instr}\n{user_line}\nOutput JSON now:\n"
 
     api_resp, raw = call_google_studio_structured(
         prompt_text=prompt,
@@ -139,11 +153,9 @@ def get_structured_quote(user_mood: str,
     cleaned = strip_code_fences(raw)
     parsed = None
 
-    # Try direct parse
     try:
         parsed = json.loads(cleaned)
     except Exception:
-        # Try extraction
         candidate = extract_first_json(cleaned)
         if candidate:
             try:
@@ -151,32 +163,23 @@ def get_structured_quote(user_mood: str,
             except Exception:
                 parsed = None
 
-    # Retry once if failed
-    if parsed is None:
-        print("[Retry] Parsing failed. Requesting again...")
-        api_resp, raw = call_google_studio_structured(
-            prompt_text=prompt,
-            api_key=api_key,
-            temperature=temperature,
-            top_k=top_k,
-            top_p=top_p,
-            stop_sequences=[stop_marker]
-        )
-        cleaned = strip_code_fences(raw)
-        try:
-            parsed = json.loads(cleaned)
-        except Exception:
-            candidate = extract_first_json(cleaned)
-            if candidate:
-                try:
-                    parsed = json.loads(candidate)
-                except Exception:
-                    parsed = None
-
     if parsed is None:
         print("[Error] Could not parse JSON from model output:\n", raw)
         return None
 
+    # If AI requested a function call
+    if isinstance(parsed, dict) and "name" in parsed and "arguments" in parsed:
+        func_name = parsed["name"]
+        args = parsed["arguments"]
+        if func_name == "get_motivation_by_mood":
+            result = get_motivation_by_mood(**args)
+            save_last_output(result)
+            return result
+        else:
+            print(f"[Error] Unknown function requested: {func_name}")
+            return None
+
+    # Otherwise, validate direct structured output
     ok, msg = validate_structured_output(parsed)
     if not ok:
         print(f"[Validation Failed] {msg}")
@@ -189,7 +192,7 @@ def get_structured_quote(user_mood: str,
 # CLI
 # ----------------------
 def main_cli():
-    ap = argparse.ArgumentParser(description="Daily Motivation Bot - structured output demo")
+    ap = argparse.ArgumentParser(description="Daily Motivation Bot - Structured Output & Function Calling")
     ap.add_argument("--mood", type=str, default="tired", help="User mood string")
     ap.add_argument("--temperature", type=float, default=0.2)
     ap.add_argument("--top_k", type=int, default=None)
@@ -202,7 +205,7 @@ def main_cli():
         print("Error: Set GOOGLE_API_KEY environment variable or pass --api_key")
         sys.exit(1)
 
-    parsed = get_structured_quote(
+    parsed = get_structured_or_function_call(
         user_mood=args.mood,
         api_key=api_key,
         temperature=args.temperature,
@@ -211,10 +214,10 @@ def main_cli():
     )
 
     if parsed:
-        print("\n[Structured Output Parsed]")
+        print("\n[Final Output]")
         print(json.dumps(parsed, indent=2, ensure_ascii=False))
     else:
-        print("\n[Failed to get clean structured output]")
+        print("\n[Failed to get valid output]")
 
 if __name__ == "__main__":
     main_cli()
