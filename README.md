@@ -6,6 +6,76 @@ This project was created as part of the **Kalvium course on Developing AI Agents
 
 ---
 
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- Python 3.7 or higher
+- Google API key for Gemini AI
+
+### Installation
+1. Clone this repository
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### How to Use the Bot
+
+#### Method 1: Interactive Mode (Recommended)
+Simply run the bot and follow the prompts:
+```bash
+python main.py
+```
+
+The bot will:
+1. 🤖 Welcome you and ask for your Google API key
+2. 💭 Ask "How are you feeling today?"
+3. 🌟 Generate a personalized motivational quote
+4. 🎯 Provide a suggested action to help you
+
+#### Method 2: Command Line Arguments
+You can also provide arguments directly:
+```bash
+python main.py --mood "tired" --api_key "your_api_key_here"
+```
+
+#### Method 3: Environment Variable
+Set your API key as an environment variable:
+```bash
+export GOOGLE_API_KEY="your_api_key_here"
+python main.py --mood "anxious"
+```
+
+### Example Usage
+```
+$ python main.py
+🤖 Welcome to MotivateMe - Your Daily Motivation Bot!
+==================================================
+Please enter your Google API key: your_api_key_here
+✅ API key received!
+
+💭 How are you feeling today?
+(e.g., tired, anxious, excited, sad, motivated, overwhelmed, etc.)
+Your mood: tired
+
+🎯 Generating motivation for: 'tired'
+⏳ Please wait...
+
+==================================================
+🌟 YOUR MOTIVATION FOR TODAY 🌟
+==================================================
+💭 Mood: tired
+💬 Quote: "Rest if you must, but don't you quit."
+👤 Author: Robert W. Service
+🎯 Suggested Action: Take a 10-minute power nap and then go for a short walk
+==================================================
+💪 Keep going, you've got this!
+```
+
+---
+
+---
+
 ## 💡 Project Overview
 
 The Daily Motivation Bot asks the user how they feel and responds with a motivational quote tailored to their mood. It uses Generative AI techniques to reason, retrieve context, format output, and call functions to log or save results.
