@@ -125,12 +125,13 @@ def get_structured_or_function_call(user_mood: str,
 
     stop_marker = "<END_JSON>"
     system_instr = f"""
-You are a motivational assistant. You can either:
-1. Return a JSON object with keys: mood, quote, author, suggested_action.
-2. OR call a function by returning JSON: {{"name": "get_motivation_by_mood", "arguments": {{"mood": "<mood>"}}}}
+    You are a motivational assistant. Generate a motivational quote based on the user's mood.
 
-Available function:
-- get_motivation_by_mood(mood: string) → returns motivational quote data.
+Return a JSON object with keys: mood, quote, author, suggested_action.
+- mood: should match or relate to the user's input mood
+- quote: an inspiring motivational quote
+- author: the author of the quote
+- suggested_action: a practical action the user can take
 
 Respond ONLY with valid JSON, no extra text or formatting. End with {stop_marker}.
 """
@@ -167,19 +168,7 @@ Respond ONLY with valid JSON, no extra text or formatting. End with {stop_marker
         print("[Error] Could not parse JSON from model output:\n", raw)
         return None
 
-    # If AI requested a function call
-    if isinstance(parsed, dict) and "name" in parsed and "arguments" in parsed:
-        func_name = parsed["name"]
-        args = parsed["arguments"]
-        if func_name == "get_motivation_by_mood":
-            result = get_motivation_by_mood(**args)
-            save_last_output(result)
-            return result
-        else:
-            print(f"[Error] Unknown function requested: {func_name}")
-            return None
-
-    # Otherwise, validate direct structured output
+    # Validate direct structured output
     ok, msg = validate_structured_output(parsed)
     if not ok:
         print(f"[Validation Failed] {msg}")
@@ -192,21 +181,42 @@ Respond ONLY with valid JSON, no extra text or formatting. End with {stop_marker
 # CLI
 # ----------------------
 def main_cli():
-    ap = argparse.ArgumentParser(description="Daily Motivation Bot - Structured Output & Function Calling")
-    ap.add_argument("--mood", type=str, default="tired", help="User mood string")
+    ap = argparse.ArgumentParser(description="Daily Motivation Bot - Interactive Mode")
+    ap.add_argument("--mood", type=str, default=None, help="User mood string (optional)")
     ap.add_argument("--temperature", type=float, default=0.2)
     ap.add_argument("--top_k", type=int, default=None)
     ap.add_argument("--top_p", type=float, default=None)
     ap.add_argument("--api_key", type=str, default=None, help="Google API key (or set GOOGLE_API_KEY env var)")
     args = ap.parse_args()
 
+    # Get API key
     api_key = args.api_key or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        print("Error: Set GOOGLE_API_KEY environment variable or pass --api_key")
-        sys.exit(1)
+        print("🤖 Welcome to MotivateMe - Your Daily Motivation Bot!")
+        print("=" * 50)
+        api_key = input("Please enter your Google API key: ").strip()
+        if not api_key:
+            print("❌ Error: API key is required to run the bot.")
+            sys.exit(1)
+        print("✅ API key received!")
+        print()
+
+    # Get user mood
+    user_mood = args.mood
+    if not user_mood:
+        print("💭 How are you feeling today?")
+        user_mood = input("Your mood: ").strip()
+        if not user_mood:
+            print("❌ Error: Please provide your mood.")
+            sys.exit(1)
+        print()
+
+    print(f"🎯 Generating motivation for: '{user_mood}'")
+    print("⏳ Please wait...")
+    print()
 
     parsed = get_structured_or_function_call(
-        user_mood=args.mood,
+        user_mood=user_mood,
         api_key=api_key,
         temperature=args.temperature,
         top_k=args.top_k,
@@ -214,10 +224,18 @@ def main_cli():
     )
 
     if parsed:
-        print("\n[Final Output]")
-        print(json.dumps(parsed, indent=2, ensure_ascii=False))
+        print("\n" + "=" * 50)
+        print("🌟 YOUR MOTIVATION FOR TODAY 🌟")
+        print("=" * 50)
+        print(f"💭 Mood: {parsed['mood']}")
+        print(f"💬 Quote: \"{parsed['quote']}\"")
+        print(f"👤 Author: {parsed['author']}")
+        print(f"🎯 Suggested Action: {parsed['suggested_action']}")
+        print("=" * 50)
+        print("💪 Keep going, you've got this!")
     else:
-        print("\n[Failed to get valid output]")
+        print("\n❌ [Failed to get valid output]")
+        print("Please try again or check your API key.")
 
 if __name__ == "__main__":
     main_cli()
